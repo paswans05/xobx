@@ -1,0 +1,33 @@
+{
+  "name": "xobx-host",
+  "version": "1.0.0",
+  "description": "Windows host for Xobx controller",
+  "main": "main.js",
+  "scripts": {
+    "start": "electron .",
+    "build": "electron-builder",
+    "server": "node server.js"
+  },
+  "dependencies": {
+    "express": "^4.18.2",
+    "robotjs": "^0.6.0",
+    "ws": "^8.13.0"
+  },
+  "devDependencies": {
+    "@electron/rebuild": "^4.0.2",
+    "electron": "^33.0.0",
+    "electron-builder": "^26.4.0",
+    "electron-packager": "^17.1.2",
+    "node-abi": "^4.24.0"
+  },
+  "build": {
+    "appId": "com.xobx.host",
+    "productName": "XobxHost",
+    "win": {
+      "target": "portable",
+      "forceCodeSigning": false
+    }
+  },
+  "author": "Xobx Team",
+  "license": "MIT"
+}
