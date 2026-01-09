@@ -19,13 +19,15 @@ export default function GamepadPage() {
   const [hostIp, setHostIp] = useState<string>("");
   const [showSettings, setShowSettings] = useState(false);
   const [tempIp, setTempIp] = useState("");
+  const [isHttps, setIsHttps] = useState(false);
 
   const socketRef = useRef<WebSocket | null>(null);
 
   // Load saved IP on mount
   useEffect(() => {
     setMounted(true);
-    const savedIp = localStorage.getItem("xobx_ip") || window.location.hostname;
+    setIsHttps(window.location.protocol === "https:");
+    const savedIp = localStorage.getItem("xobx_ip") || "";
     setHostIp(savedIp);
     setTempIp(savedIp);
   }, []);
@@ -38,11 +40,23 @@ export default function GamepadPage() {
       socketRef.current.close();
     }
 
-    const wsUrl = `ws://${hostIp}:3001`;
-    console.log(`Connecting to ${wsUrl}...`);
+    // Logic: If on HTTPS, we need WSS. If on HTTP, WS is fine.
+    const cleanIp = hostIp
+      .replace(/^https?:\/\//, "")
+      .replace(/^wss?:\/\//, "");
+
+    // If user provided a tunnel URL (contains dots but not just numbers)
+    const isDomain = cleanIp.includes(".") && !/^[0-9.]+$/.test(cleanIp);
+    const finalUrl = isHttps
+      ? isDomain
+        ? `wss://${cleanIp}`
+        : `ws://${cleanIp}:3001` // Local IPs will still fail on HTTPS
+      : `ws://${cleanIp}:3001`;
+
+    console.log(`Connecting to ${finalUrl}...`);
 
     try {
-      const socket = new WebSocket(wsUrl);
+      const socket = new WebSocket(finalUrl);
       socketRef.current = socket;
 
       socket.onopen = () => setStatus("CONNECTED");
@@ -51,15 +65,11 @@ export default function GamepadPage() {
         // Only retry if we're not waiting for a new IP
         setTimeout(() => connect(), 3000);
       };
-      socket.onerror = (err) => {
-        console.error("WebSocket Error:", err);
-        setStatus("DISCONNECTED");
-      };
     } catch (e) {
       console.error("Connection failed:", e);
       setStatus("DISCONNECTED");
     }
-  }, [hostIp]);
+  }, [hostIp, isHttps]);
 
   useEffect(() => {
     if (mounted && hostIp) {
@@ -365,13 +375,31 @@ export default function GamepadPage() {
                 </div>
 
                 <div className="space-y-6">
+                  {isHttps && (
+                    <div className="p-4 bg-red-500/10 border border-red-500/20 rounded-xl">
+                      <p className="text-[0.7rem] text-red-400 font-bold flex gap-2">
+                        <WifiOff size={16} />
+                        HTTPS DETECTED: Browsers block local connections (ws://)
+                        from secure sites.
+                      </p>
+                      <ul className="mt-2 text-[0.6rem] text-white/50 space-y-1 list-disc pl-4">
+                        <li>
+                          Use a tunnel (e.g. <b>ngrok</b>) for a <i>wss://</i>{" "}
+                          address
+                        </li>
+                        <li>Or allow "Insecure Content" in Site Settings</li>
+                        <li>Or use http://localhost:3000</li>
+                      </ul>
+                    </div>
+                  )}
+
                   <div>
                     <label className="block text-[0.6rem] font-bold text-white/40 tracking-[0.2em] uppercase mb-2">
-                      Host PC IP Address
+                      Host PC IP or Tunnel URL
                     </label>
                     <input
                       type="text"
-                      placeholder="e.g. 192.168.1.10"
+                      placeholder="e.g. 192.168.1.10 or tunnel.ngrok-free.app"
                       value={tempIp}
                       onChange={(e) => setTempIp(e.target.value)}
                       className="w-full bg-white/5 border border-white/10 rounded-xl px-4 py-3 text-white font-orbitron focus:border-neon-cyan outline-none transition-all shadow-inner"
@@ -381,8 +409,8 @@ export default function GamepadPage() {
                   <div className="p-4 bg-neon-cyan/5 border border-neon-cyan/10 rounded-xl">
                     <p className="text-[0.7rem] text-neon-cyan/60 flex gap-2">
                       <Wifi size={16} />
-                      Make sure your PC and Mobile are on the same Wi-Fi
-                      network.
+                      Linking to{" "}
+                      {isHttps ? "Secure Tunnel" : "Local IP Port 3001"}
                     </p>
                   </div>
 
