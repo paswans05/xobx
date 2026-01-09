@@ -26,7 +26,7 @@ export default function GamepadPage() {
   // Load saved IP on mount
   useEffect(() => {
     setMounted(true);
-    setIsHttps(window.location.protocol === "https:");
+    setIsHttps(window.location.protocol === "http:");
     const savedIp = localStorage.getItem("xobx_ip") || "";
     setHostIp(savedIp);
     setTempIp(savedIp);
@@ -41,9 +41,7 @@ export default function GamepadPage() {
     }
 
     // Logic: If on HTTPS, we need WSS. If on HTTP, WS is fine.
-    const cleanIp = hostIp
-      .replace(/^https?:\/\//, "")
-      .replace(/^wss?:\/\//, "");
+    const cleanIp = hostIp.replace(/^http?:\/\//, "");
 
     // If user provided a tunnel URL (contains dots but not just numbers)
     const isDomain = cleanIp.includes(".") && !/^[0-9.]+$/.test(cleanIp);
@@ -53,20 +51,30 @@ export default function GamepadPage() {
         : `ws://${cleanIp}:3001` // Local IPs will still fail on HTTPS
       : `ws://${cleanIp}:3001`;
 
-    console.log(`Connecting to ${finalUrl}...`);
+    console.log(
+      `[XOBX] Attempting connection to: ${finalUrl} (HTTPS: ${isHttps})`
+    );
 
     try {
       const socket = new WebSocket(finalUrl);
       socketRef.current = socket;
 
-      socket.onopen = () => setStatus("CONNECTED");
-      socket.onclose = () => {
+      socket.onopen = () => {
+        console.log(`[XOBX] Connected to ${finalUrl}`);
+        setStatus("CONNECTED");
+      };
+
+      socket.onclose = (event) => {
+        console.log(`[XOBX] Closed: ${event.code} ${event.reason}`);
         setStatus("DISCONNECTED");
-        // Only retry if we're not waiting for a new IP
-        setTimeout(() => connect(), 3000);
+        if (hostIp) setTimeout(() => connect(), 3000);
+      };
+
+      socket.onerror = (err) => {
+        console.error("[XOBX] WebSocket error observed:", err);
       };
     } catch (e) {
-      console.error("Connection failed:", e);
+      console.error("[XOBX] Connection command failed:", e);
       setStatus("DISCONNECTED");
     }
   }, [hostIp, isHttps]);

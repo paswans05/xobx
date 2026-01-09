@@ -106,10 +106,11 @@ function getLocalIP() {
   return "127.0.0.1";
 }
 
-server.listen(PORT, () => {
+server.listen(PORT, "0.0.0.0", () => {
   const ip = getLocalIP();
   console.log("----------------------------------------");
   console.log("Xobx Host Running");
   console.log(`WebSocket server on: ws://${ip}:${PORT}`);
+  console.log(`Also available on: ws://localhost:${PORT}`);
   console.log("----------------------------------------");
 });
