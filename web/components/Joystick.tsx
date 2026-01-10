@@ -6,11 +6,18 @@ import nipplejs from "nipplejs";
 interface JoystickProps {
   id: string;
   color: "cyan" | "magenta";
+  size?: number;
   onMove: (data: any) => void;
   onEnd: () => void;
 }
 
-export const Joystick = ({ id, color, onMove, onEnd }: JoystickProps) => {
+export const Joystick = ({
+  id,
+  color,
+  size = 140,
+  onMove,
+  onEnd,
+}: JoystickProps) => {
   const containerRef = useRef<HTMLDivElement>(null);
   const managerRef = useRef<any>(null);
 
@@ -22,6 +29,7 @@ export const Joystick = ({ id, color, onMove, onEnd }: JoystickProps) => {
       mode: "static",
       position: { left: "50%", top: "50%" },
       color: color === "cyan" ? "cyan" : "magenta",
+      size: size,
     });
 
     managerRef.current.on("move", (evt: any, data: any) => onMove(data));
@@ -30,13 +38,13 @@ export const Joystick = ({ id, color, onMove, onEnd }: JoystickProps) => {
     return () => {
       if (managerRef.current) managerRef.current.destroy();
     };
-  }, [color, onMove, onEnd]);
+  }, [color, onMove, onEnd, size]);
 
   return (
     <div
       ref={containerRef}
       id={id}
-      className="w-[140px] h-[140px] bg-black/30 rounded-full border-2 border-white/10 relative shadow-[inset_0_0_20px_rgba(0,0,0,0.5)]"
+      className="w-[min(140px,25vw)] h-[min(140px,25vw)] sm:w-[140px] sm:h-[140px] bg-black/30 rounded-full border-2 border-white/10 relative shadow-[inset_0_0_20px_rgba(0,0,0,0.5)]"
     />
   );
 };

@@ -20,64 +20,70 @@ export default function GamepadPage() {
   const [showSettings, setShowSettings] = useState(false);
   const [tempIp, setTempIp] = useState("");
   const [isHttps, setIsHttps] = useState(false);
+  const [debugLog, setDebugLog] = useState<string[]>([]);
+
+  const addLog = useCallback((msg: string) => {
+    setDebugLog((prev) => [msg, ...prev].slice(0, 5));
+    console.log(msg);
+  }, []);
 
   const socketRef = useRef<WebSocket | null>(null);
 
   // Load saved IP on mount
   useEffect(() => {
     setMounted(true);
-    setIsHttps(window.location.protocol === "http:");
-    const savedIp = localStorage.getItem("xobx_ip") || "";
+    const https = window.location.protocol === "https:";
+    setIsHttps(https);
+    const savedIp = localStorage.getItem("xobx_ip") || window.location.hostname;
     setHostIp(savedIp);
     setTempIp(savedIp);
-  }, []);
+    addLog(`[XOBX] Init (HTTPS: ${https})`);
+  }, [addLog]);
 
   const connect = useCallback(() => {
     if (typeof window === "undefined" || !hostIp) return;
 
-    // Close existing socket if any
     if (socketRef.current) {
       socketRef.current.close();
     }
 
-    // Logic: If on HTTPS, we need WSS. If on HTTP, WS is fine.
-    const cleanIp = hostIp.replace(/^http?:\/\//, "");
+    const cleanIp = hostIp
+      .replace(/^https?:\/\//, "")
+      .replace(/^wss?:\/\//, "");
 
-    // If user provided a tunnel URL (contains dots but not just numbers)
+    // Logic: If on HTTPS, we try WSS if it's a domain, otherwise WS (will likely fail unless allowed)
     const isDomain = cleanIp.includes(".") && !/^[0-9.]+$/.test(cleanIp);
     const finalUrl = isHttps
       ? isDomain
         ? `wss://${cleanIp}`
-        : `ws://${cleanIp}:3001` // Local IPs will still fail on HTTPS
+        : `ws://${cleanIp}:3001`
       : `ws://${cleanIp}:3001`;
 
-    console.log(
-      `[XOBX] Attempting connection to: ${finalUrl} (HTTPS: ${isHttps})`
-    );
+    addLog(`[XOBX] Linking to: ${finalUrl}`);
 
     try {
       const socket = new WebSocket(finalUrl);
       socketRef.current = socket;
 
       socket.onopen = () => {
-        console.log(`[XOBX] Connected to ${finalUrl}`);
+        addLog(`[XOBX] Connected!`);
         setStatus("CONNECTED");
       };
 
       socket.onclose = (event) => {
-        console.log(`[XOBX] Closed: ${event.code} ${event.reason}`);
+        addLog(`[XOBX] Closed: ${event.code}`);
         setStatus("DISCONNECTED");
         if (hostIp) setTimeout(() => connect(), 3000);
       };
 
       socket.onerror = (err) => {
-        console.error("[XOBX] WebSocket error observed:", err);
+        addLog(`[XOBX] Blocked/Error`);
       };
     } catch (e) {
-      console.error("[XOBX] Connection command failed:", e);
+      addLog(`[XOBX] Setup failed`);
       setStatus("DISCONNECTED");
     }
-  }, [hostIp, isHttps]);
+  }, [hostIp, isHttps, addLog]);
 
   useEffect(() => {
     if (mounted && hostIp) {
@@ -106,8 +112,21 @@ export default function GamepadPage() {
   if (!mounted) return null;
 
   return (
-    <div className="w-full h-screen p-4 flex items-center justify-center overflow-hidden bg-[#0a0a0f] text-white">
-      <div className="w-full max-w-[950px] h-[95vh] glass-effect rounded-3xl flex flex-col p-6 relative overflow-hidden">
+    <div className="w-full h-screen flex items-center justify-center overflow-hidden bg-[#0a0a0f] text-white">
+      {/* Orientation Warning */}
+      <div className="fixed inset-0 z-[100] bg-black flex flex-col items-center justify-center p-8 text-center sm:hidden landscape:hidden">
+        <div className="w-20 h-20 border-2 border-neon-cyan/50 rounded-2xl flex items-center justify-center mb-6 animate-pulse">
+          <Cpu size={40} className="text-neon-cyan" />
+        </div>
+        <h2 className="font-orbitron text-lg font-bold tracking-[0.2em] mb-2 uppercase">
+          ROTATE DEVICE
+        </h2>
+        <p className="text-[0.7rem] text-white/40 tracking-widest uppercase">
+          Best experienced in Landscape mode
+        </p>
+      </div>
+
+      <div className="w-full h-full sm:h-[95vh] sm:max-w-[950px] sm:glass-effect sm:rounded-3xl flex flex-col p-4 sm:p-6 relative overflow-hidden">
         {/* Background Gradients */}
         <div className="absolute top-0 left-0 w-full h-full pointer-events-none opacity-20">
           <div className="absolute top-[-20%] left-[-10%] w-[50%] h-[70%] bg-neon-cyan/30 blur-[120px] rounded-full" />
@@ -115,13 +134,13 @@ export default function GamepadPage() {
         </div>
 
         {/* Header */}
-        <header className="flex justify-between items-center pb-4 border-b border-white/10 z-10">
-          <div className="flex items-center gap-4">
-            <h1 className="font-orbitron text-2xl font-black tracking-[0.3em] bg-gradient-to-r from-neon-cyan to-neon-magenta bg-clip-text text-transparent italic">
+        <header className="flex justify-between items-center pb-2 sm:pb-4 border-b border-white/10 z-10 shrink-0">
+          <div className="flex items-center gap-3 sm:gap-4">
+            <h1 className="font-orbitron text-xl sm:text-2xl font-black tracking-[0.3em] bg-gradient-to-r from-neon-cyan to-neon-magenta bg-clip-text text-transparent italic">
               XOBX
             </h1>
-            <div className="h-4 w-[1px] bg-white/10" />
-            <div className="flex items-center gap-2 px-3 py-1 bg-white/5 rounded-full border border-white/5 text-[0.6rem] font-bold tracking-widest text-neon-cyan opacity-80">
+            <div className="h-4 w-[1px] bg-white/10 hidden sm:block" />
+            <div className="hidden sm:flex items-center gap-2 px-3 py-1 bg-white/5 rounded-full border border-white/5 text-[0.6rem] font-bold tracking-widest text-neon-cyan opacity-80">
               PROTOTYPE v2.0
             </div>
           </div>
@@ -152,10 +171,10 @@ export default function GamepadPage() {
         </header>
 
         {/* Controller Layout */}
-        <main className="flex-1 grid grid-cols-[1fr_120px_1fr] items-center gap-4 py-6 z-10">
+        <main className="flex-1 grid grid-cols-[1fr_auto_1fr] sm:grid-cols-[1fr_120px_1fr] items-center gap-2 sm:gap-4 py-2 sm:py-6 z-10 min-h-0 overflow-hidden">
           {/* Left Control Cluster */}
-          <section className="flex flex-col items-center gap-10">
-            <div className="relative p-2 rounded-full border border-neon-cyan/20 bg-neon-cyan/5 shadow-[0_0_40px_rgba(0,242,255,0.05)]">
+          <section className="flex flex-col items-center justify-around h-full gap-4 sm:gap-10">
+            <div className="relative p-1 sm:p-2 rounded-full border border-neon-cyan/20 bg-neon-cyan/5 shadow-[0_0_40px_rgba(0,242,255,0.05)]">
               <Joystick
                 id="left-stick"
                 color="cyan"
@@ -174,7 +193,7 @@ export default function GamepadPage() {
               />
             </div>
 
-            <div className="grid grid-cols-3 grid-rows-3 gap-2">
+            <div className="grid grid-cols-3 grid-rows-3 gap-1 sm:gap-2 scale-75 sm:scale-100 origin-center">
               <div />
               <GamepadButton
                 id="btn-up"
@@ -214,8 +233,8 @@ export default function GamepadPage() {
           </section>
 
           {/* Central Core */}
-          <section className="flex flex-col items-center gap-10">
-            <div className="flex gap-3">
+          <section className="flex flex-col items-center justify-center h-full gap-4 sm:gap-10 px-2">
+            <div className="flex flex-col sm:flex-row gap-2 sm:gap-3 scale-75 sm:scale-100">
               <GamepadButton
                 id="btn-select"
                 label="SELECT"
@@ -232,7 +251,7 @@ export default function GamepadPage() {
               />
             </div>
 
-            <div className="relative group">
+            <div className="relative group scale-50 sm:scale-100">
               <div className="absolute inset-0 bg-gradient-to-br from-neon-cyan to-neon-magenta opacity-30 blur-2xl group-hover:opacity-60 transition-opacity" />
               <div className="w-24 h-24 rounded-full bg-gradient-to-br from-neon-cyan to-neon-magenta p-[2px] shadow-[0_0_30px_rgba(0,242,255,0.3)]">
                 <div className="w-full h-full rounded-full bg-[#0a0a0f] flex items-center justify-center backdrop-blur-3xl">
@@ -243,15 +262,15 @@ export default function GamepadPage() {
               </div>
             </div>
 
-            <div className="text-[0.5rem] tracking-[0.4em] font-black text-white/30 uppercase mt-4">
+            <div className="hidden sm:block text-[0.5rem] tracking-[0.4em] font-black text-white/30 uppercase mt-4">
               X-Interface v2
             </div>
           </section>
 
           {/* Right Action Cluster */}
-          <section className="flex flex-col items-center gap-8">
-            <div className="relative p-8 rounded-full border border-white/5 bg-white/5 shadow-inner">
-              <div className="grid grid-cols-3 grid-rows-3 items-center justify-center">
+          <section className="flex flex-col items-center justify-around h-full gap-4 sm:gap-8">
+            <div className="relative p-2 sm:p-8 rounded-full border border-white/5 bg-white/5 shadow-inner scale-75 sm:scale-100 origin-center">
+              <div className="grid grid-cols-3 grid-rows-3 items-center justify-center gap-1 sm:gap-2">
                 <div />
                 <GamepadButton
                   id="btn-y"
@@ -288,7 +307,7 @@ export default function GamepadPage() {
               </div>
             </div>
 
-            <div className="relative p-2 rounded-full border border-neon-magenta/20 bg-neon-magenta/5 shadow-[0_0_40px_rgba(188,0,255,0.05)]">
+            <div className="relative p-1 sm:p-2 rounded-full border border-neon-magenta/20 bg-neon-magenta/5 shadow-[0_0_40px_rgba(188,0,255,0.05)]">
               <Joystick
                 id="right-stick"
                 color="magenta"
@@ -310,8 +329,8 @@ export default function GamepadPage() {
         </main>
 
         {/* Triggers */}
-        <section className="flex justify-between px-6 pb-6 pt-2 z-10">
-          <div className="flex gap-6">
+        <section className="flex justify-between px-2 sm:px-6 pb-2 sm:pb-6 pt-1 sm:pt-2 z-10 shrink-0">
+          <div className="flex gap-2 sm:gap-6 scale-75 sm:scale-100 origin-left">
             <GamepadButton
               id="btn-l1"
               label="L1"
@@ -327,7 +346,7 @@ export default function GamepadPage() {
               onRelease={handleRelease}
             />
           </div>
-          <div className="flex gap-6">
+          <div className="flex gap-2 sm:gap-6 scale-75 sm:scale-100 origin-right">
             <GamepadButton
               id="btn-r1"
               label="R1"
@@ -346,12 +365,24 @@ export default function GamepadPage() {
         </section>
 
         {/* Footer */}
-        <footer className="pt-4 border-t border-white/10 flex justify-between items-center z-10">
-          <div className="text-[0.6rem] tracking-[0.2em] font-black text-white/20 uppercase">
-            System Identity: {hostIp || "UNCONFIGURED"}
+        <footer className="pt-4 border-t border-white/10 flex justify-between items-end z-10">
+          <div className="flex flex-col gap-1">
+            {debugLog.map((log, i) => (
+              <div
+                key={i}
+                className="text-[0.45rem] tracking-[0.1em] font-mono text-white/30 uppercase"
+              >
+                {i === 0 ? "⚡ " : "  "} {log}
+              </div>
+            ))}
           </div>
-          <div className="text-[0.6rem] tracking-[0.1em] font-medium text-white/30">
-            SECURE LINK PORT: 3001
+          <div className="text-right flex flex-col gap-1">
+            <div className="text-[0.6rem] tracking-[0.2em] font-black text-white/20 uppercase">
+              ID: {hostIp || "UNCONFIGURED"}
+            </div>
+            <div className="text-[0.5rem] tracking-[0.1em] font-medium text-white/10 italic">
+              SECURE LINK PORT: 3001
+            </div>
           </div>
         </footer>
 
