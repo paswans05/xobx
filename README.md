@@ -28,6 +28,7 @@
 - [Architecture Guide](docs/architecture.md) - How XOBX works under the hood.
 - [Getting Started](docs/getting-started.md) - Detailed setup instructions.
 - [Troubleshooting](docs/troubleshooting.md) - Fix common connectivity issues.
+- [Future Roadmap](docs/roadmap.md) - Our plans for the future of XOBX.
 
 ## 🛠️ Project Structure
 
