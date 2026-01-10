@@ -23,21 +23,21 @@ export const GamepadButton = ({
   const getVariantStyles = () => {
     switch (variant) {
       case "y":
-        return "border-yellow-400/40 text-white font-orbitron";
+        return "hardware-button text-xbox-yellow font-bold text-2xl";
       case "b":
-        return "border-red-500/40 text-white font-orbitron";
+        return "hardware-button text-xbox-red font-bold text-2xl";
       case "a":
-        return "border-green-500/40 text-white font-orbitron";
+        return "hardware-button text-xbox-green font-bold text-2xl";
       case "x":
-        return "border-blue-500/40 text-white font-orbitron";
+        return "hardware-button text-xbox-blue font-bold text-2xl";
       case "dpad":
-        return "w-12 h-12 bg-white/5 border-white/10 rounded-lg";
+        return "w-14 h-14 bg-[#111] border-2 border-black rounded-xl shadow-[inset_0_2px_10px_rgba(0,0,0,0.8),0_1px_1px_rgba(255,255,255,0.1)] active:shadow-inner";
       case "menu":
-        return "px-3 py-1 text-[0.6rem] border-white/10 rounded-full text-white/60 font-medium";
+        return "w-8 h-8 hardware-button rounded-full text-[0.5rem] text-white/40";
       case "trigger":
-        return "px-6 py-2 bg-white/5 border-white/10 rounded uppercase text-[0.7rem] font-orbitron";
+        return "px-6 py-2 bg-[#1a1a1a] border-t-2 border-white/5 rounded-t-2xl rounded-b-lg uppercase text-[0.6rem] font-black tracking-widest text-white/40 shadow-2xl justify-start pl-4";
       default:
-        return "border-white/10 bg-white/5";
+        return "hardware-button text-white/80";
     }
   };
 
@@ -45,19 +45,18 @@ export const GamepadButton = ({
     <motion.button
       id={id}
       whileTap={{
-        scale: 0.9,
-        backgroundColor: "rgba(0, 242, 255, 0.2)",
-        borderColor: "#00f2ff",
-        boxShadow: "0 0 15px #00f2ff",
+        scale: 0.94,
+        filter: "brightness(1.2) contrast(1.1)",
+        boxShadow: "inset 0 4px 10px rgba(0,0,0,0.8)",
       }}
       onPointerDown={() => onPress(id.replace("btn-", ""))}
       onPointerUp={() => onRelease(id.replace("btn-", ""))}
       onPointerLeave={() => onRelease(id.replace("btn-", ""))}
       className={cn(
-        "flex items-center justify-center border-2 transition-colors",
+        "flex items-center justify-center transition-all duration-150 select-none touch-none",
         variant === "dpad" || variant === "menu" || variant === "trigger"
-          ? "border"
-          : "w-14 h-14 rounded-full text-xl",
+          ? ""
+          : "w-16 h-16 rounded-full",
         getVariantStyles(),
         className
       )}

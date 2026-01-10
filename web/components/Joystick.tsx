@@ -5,7 +5,7 @@ import nipplejs from "nipplejs";
 
 interface JoystickProps {
   id: string;
-  color: "cyan" | "magenta";
+  color: "cyan" | "magenta" | "purple" | "gray";
   size?: number;
   onMove: (data: any) => void;
   onEnd: () => void;
@@ -14,7 +14,7 @@ interface JoystickProps {
 export const Joystick = ({
   id,
   color,
-  size = 140,
+  size = 130,
   onMove,
   onEnd,
 }: JoystickProps) => {
@@ -24,11 +24,26 @@ export const Joystick = ({
   useEffect(() => {
     if (!containerRef.current) return;
 
+    const getColor = () => {
+      switch (color) {
+        case "cyan":
+          return "#00f2ff";
+        case "magenta":
+          return "#bc00ff";
+        case "purple":
+          return "#7b4db8";
+        case "gray":
+          return "#333";
+        default:
+          return "#555";
+      }
+    };
+
     managerRef.current = nipplejs.create({
       zone: containerRef.current,
       mode: "static",
       position: { left: "50%", top: "50%" },
-      color: color === "cyan" ? "cyan" : "magenta",
+      color: getColor(),
       size: size,
     });
 
@@ -44,7 +59,12 @@ export const Joystick = ({
     <div
       ref={containerRef}
       id={id}
-      className="w-[min(140px,25vw)] h-[min(140px,25vw)] sm:w-[140px] sm:h-[140px] bg-black/30 rounded-full border-2 border-white/10 relative shadow-[inset_0_0_20px_rgba(0,0,0,0.5)]"
+      className="w-[130px] h-[130px] rounded-full relative shadow-[inset_0_4px_15px_#000] touch-none select-none"
+      style={{
+        background:
+          "radial-gradient(circle at 50% 40%, #1e1e24 0%, #0a0a0f 100%)",
+        border: "1px solid rgba(255,255,255,0.05)",
+      }}
     />
   );
 };
