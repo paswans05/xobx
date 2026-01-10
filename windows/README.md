@@ -45,3 +45,4 @@ _Note: You can customize these mappings in `server.js`._
 - [Root Documentation](../README.md)
 - [Troubleshooting Guide](../docs/troubleshooting.md)
 - [Future Roadmap](../docs/roadmap.md)
+- [Code Examples](../examples/)

@@ -34,3 +34,4 @@ This is the mobile-facing part of the XOBX system. It provides a touch-optimized
 - [Root Documentation](../README.md)
 - [Architecture Guide](../docs/architecture.md)
 - [Future Roadmap](../docs/roadmap.md)
+- [Code Examples](../examples/)
