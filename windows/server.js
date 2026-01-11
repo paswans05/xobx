@@ -24,9 +24,17 @@ const buttonMap = {
   select: "tab",
 };
 
+// Helper to send logs to parent process
+function log(msg, type = "info") {
+  console.log(msg); // Keep terminal output
+  if (process.send) {
+    process.send({ type: "log", data: msg, level: type });
+  }
+}
+
 // WebSocket logic
 wss.on("connection", (ws) => {
-  console.log("Mobile controller connected");
+  log("Mobile controller connected", "success");
 
   ws.on("message", (message) => {
     try {
@@ -37,14 +45,14 @@ wss.on("connection", (ws) => {
           if (buttonMap[data]) {
             robot.keyToggle(buttonMap[data], "down");
           }
-          console.log(`Button Down: ${data}`);
+          log(`Button Down: ${data}`);
           break;
 
         case "button-up":
           if (buttonMap[data]) {
             robot.keyToggle(buttonMap[data], "up");
           }
-          console.log(`Button Up: ${data}`);
+          log(`Button Up: ${data}`);
           break;
 
         case "joystick-left":
@@ -57,11 +65,12 @@ wss.on("connection", (ws) => {
       }
     } catch (e) {
       console.error("Error handling message:", e);
+      log(`Error: ${e.message}`, "error");
     }
   });
 
   ws.on("close", () => {
-    console.log("Mobile controller disconnected");
+    log("Mobile controller disconnected", "warning");
   });
 });
 
@@ -108,9 +117,9 @@ function getLocalIP() {
 
 server.listen(PORT, "0.0.0.0", () => {
   const ip = getLocalIP();
-  console.log("----------------------------------------");
-  console.log("Xobx Host Running");
-  console.log(`WebSocket server on: ws://${ip}:${PORT}`);
-  console.log(`Also available on: ws://localhost:${PORT}`);
-  console.log("----------------------------------------");
+  log("----------------------------------------");
+  log("Xobx Host Running", "success");
+  log(`WebSocket server on: ws://${ip}:${PORT}`);
+  log(`Also available on: ws://localhost:${PORT}`);
+  log("----------------------------------------");
 });

@@ -1,0 +1,122 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>XOBX Host</title>
+    <style>
+      body {
+        background-color: #121212;
+        color: #ffffff;
+        font-family: "Segoe UI", Tahoma, Geneva, Verdana, sans-serif;
+        margin: 0;
+        padding: 20px;
+        display: flex;
+        flex-direction: column;
+        height: 100vh;
+        box-sizing: border-box;
+        overflow: hidden;
+      }
+
+      .header {
+        display: flex;
+        align-items: center;
+        margin-bottom: 20px;
+        padding-bottom: 10px;
+        border-bottom: 1px solid #333;
+      }
+
+      .logo {
+        width: 48px;
+        height: 48px;
+        margin-right: 15px;
+        /* Invert color for dark mode since SVG is #666 */
+        filter: invert(1);
+      }
+
+      h1 {
+        margin: 0;
+        font-size: 24px;
+        font-weight: 600;
+      }
+
+      .status {
+        font-size: 14px;
+        color: #4caf50;
+        margin-left: auto;
+      }
+
+      #logs {
+        flex: 1;
+        background-color: #1e1e1e;
+        border-radius: 6px;
+        padding: 10px;
+        overflow-y: auto;
+        font-family: "Consolas", "Courier New", monospace;
+        font-size: 13px;
+        border: 1px solid #333;
+      }
+
+      .log-entry {
+        margin-bottom: 4px;
+        word-break: break-word;
+      }
+
+      .log-info {
+        color: #cccccc;
+      }
+      .log-success {
+        color: #4caf50;
+      }
+      .log-warning {
+        color: #ff9800;
+      }
+      .log-error {
+        color: #f44336;
+      }
+
+      ::-webkit-scrollbar {
+        width: 8px;
+      }
+      ::-webkit-scrollbar-track {
+        background: #1e1e1e;
+      }
+      ::-webkit-scrollbar-thumb {
+        background: #444;
+        border-radius: 4px;
+      }
+      ::-webkit-scrollbar-thumb:hover {
+        background: #555;
+      }
+    </style>
+  </head>
+  <body>
+    <div class="header">
+      <img src="assets/logo.svg" class="logo" alt="XOBX Logo" />
+      <div>
+        <h1>XOBX Host</h1>
+        <div style="font-size: 12px; color: #888">
+          Mobile to PC Controller Bridge
+        </div>
+      </div>
+      <div class="status">● Running</div>
+    </div>
+
+    <div id="logs"></div>
+
+    <script>
+      const logContainer = document.getElementById("logs");
+
+      window.api.onLog((message) => {
+        const entry = document.createElement("div");
+        entry.className = `log-entry log-${message.level || "info"}`;
+
+        const time = new Date().toLocaleTimeString();
+        entry.textContent = `[${time}] ${message.data}`;
+
+        logContainer.appendChild(entry);
+        logContainer.scrollTop = logContainer.scrollHeight;
+      });
+    </script>
+  </body>
+</html>
