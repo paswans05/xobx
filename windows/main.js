@@ -6,6 +6,7 @@ const {
   Notification,
   BrowserWindow,
   ipcMain,
+  nativeTheme,
 } = require("electron");
 const path = require("path");
 const { fork } = require("child_process");
@@ -14,11 +15,32 @@ let tray = null;
 let serverProcess = null;
 let mainWindow = null;
 
+// Paths to assets
+const ASSETS_DIR = path.join(__dirname, "assets");
+const ICON_LIGHT = path.join(ASSETS_DIR, "xobx-light.png"); // For Dark Mode (Light Icon)
+const ICON_DARK = path.join(ASSETS_DIR, "xobx-dark.png"); // For Light Mode (Dark Icon)
+// Logic: If System is Dark -> Use Light Icon. If System is Light -> Use Dark Icon.
+
+function getTrayIcon() {
+  const isDarkMode = nativeTheme.shouldUseDarkColors;
+  const iconPath = isDarkMode ? ICON_LIGHT : ICON_DARK;
+  return nativeImage.createFromPath(iconPath).resize({
+    width: 16,
+    height: 16,
+  });
+}
+
+function updateTrayIcon() {
+  if (tray) {
+    tray.setImage(getTrayIcon());
+  }
+}
+
 function createWindow() {
   mainWindow = new BrowserWindow({
     width: 600,
     height: 500,
-    icon: path.join(__dirname, "assets/logo.svg"), // Electron supports SVG icons on some platforms, or fallback
+    icon: path.join(__dirname, "assets/xobx-dark.png"), // Electron supports SVG icons on some platforms, or fallback
     webPreferences: {
       preload: path.join(__dirname, "preload.js"),
       nodeIntegration: false,
@@ -54,7 +76,7 @@ function startServer() {
 }
 
 function createTray() {
-  const icon = nativeImage.createEmpty(); // TODO: Use actual icon
+  const icon = getTrayIcon();
   tray = new Tray(icon);
 
   const contextMenu = Menu.buildFromTemplate([
@@ -91,6 +113,11 @@ function createTray() {
 
   tray.on("click", () => {
     if (mainWindow) mainWindow.show();
+  });
+
+  // Update icon when system theme changes
+  nativeTheme.on("updated", () => {
+    tray.setImage(getTrayIcon());
   });
 
   new Notification({
