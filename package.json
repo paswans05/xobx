@@ -1,0 +1,9 @@
+{
+  "name": "xobx",
+  "private": true,
+  "scripts": {
+    "start": "npx -y concurrently \"npm start --prefix windows\" \"npm run dev --prefix web\"",
+    "dev": "npm start",
+    "install:all": "npm install --prefix windows && npm install --prefix web"
+  }
+}
